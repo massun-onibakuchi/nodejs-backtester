@@ -6,22 +6,20 @@ function genBackTest(ohlcv, parentClass, from) {
             // super();
             this.from = from
             this.allOhlcv = allOhlcv.reverse()
-            this.length = allOhlcv.length;
+            this.length = this.allOhlcv.length;
             this.ohlcv = []
             this.open = []
             this.high = []
             this.low = []
             this.close = []
             this.volume = []
-            this.position = { timestamp: 0, qty: 0, aveOpenPrice: 0 }
             super.init() //インジ初期化
         }
         runTest() {
             // イテレートする for??
             super.next()
-            super.updateOhlcv()
+            this.updateOhlcv()
         }
-        // sayhello(){console.log('fefeeef');}
         addOhlcv(ohlcv) {
             this.ohlcv = ohlcv
             console.log('backtsting');
@@ -29,56 +27,83 @@ function genBackTest(ohlcv, parentClass, from) {
         updateOhlcv() {
             const next = this.allOhlcv.pop();
             this.ohlcv.push(next); //nextOhlcv
-        }
-        recordPnL() {
-            this.
+            this.length--;
         }
 
     }(ohlcv, from)
 }
 
 class TradeManagement {
-    /*     constructor(allOhlcv, balance, commsion) {
-            this.allOhlcv = allOhlcv.reverse()
-            this.length = allOhlcv.length;
-            this.ohlcv = []
-            this.open = []
-            this.high = []
-            this.low = []
-            this.close = []
-            this.volume = []
-            this.position = { timestamp: 0, qty: 0, aveOpenPrice: 0 }
-        }
-     */
+    constructor() {
+        // this.profit = 0
+        // this.loss = 0
+        // this.dd = 0
+        this.snapshot = this.balance;
+        this.lot = 1
+        this.buyPnL = []
+        this.sellPnL = []
+        this.buyRecord=[,]
+        this.sellRecord=[,]
+        this.position = { timestamp: 0, qty: 0, aveOpenPrice: 0 }
+    }
+
     entry(qty) {
         // this.position = { timestamp: length, qty: qty, aveOpenPrice: this.open[this.open.length - 1] }
+
         this.position['timestamp'] = length;
         const originQty = this.position['qty'];
         this.position['aveOpenPrice'] = (this.position['aveOpenPrice'] * originQty + this.allOhlcv[this.length - 1][0] * qty) / (originQty + qty)
         this.position['qty'] += qty;
+
+        this.recordPnL();
     }
-    // buy() {
-    //     this.buyEntry = { timestamp: Date.now(), qty: 1, aveOpenPrice: this.open[this.open.length - 1] }
-    // }
-    // sell() {
-    //     this.buyEntry = { timestamp: Date.now(), qty: 1, aveOpenPrice: this.open[this.open.length - 1] }
-    // }
+    buy() {
+        this.position['timestamp'] = length;
+        const originQty = this.position['qty'];
+        this.position['aveOpenPrice'] = (this.position['aveOpenPrice'] * originQty + this.allOhlcv[this.length - 1][0] * qty) / (originQty + qty)
+        this.position['qty'] += qty;
+
+        if (originQty < 0) {
+
+            this.recordPnL();
+        }
+    }
+    sell(ordQty) {
+        const qty = ordQty > 0 ? -ordQty : ordQty;
+        const originQty = this.position['qty'];
+        /**@todo ピラッミッディング制限*/
+
+        if (originQty > 0) {
+            this.position['aveOpenPrice'] = this.allOhlcv[this.length - 1][0];
+            this.position['qty'] = qty;
+            this.recordPnL();
+        }
+        if (originQty < 0) {
+            // if (qty > originQty) qty
+            this.position['timestamp'] = length;
+            this.position['aveOpenPrice'] = (this.position['aveOpenPrice'] * originQty + this.allOhlcv[this.length - 1][0] * qty) / (originQty + qty)
+            this.position['qty'] += qty;
+        }
+  
+    }
     //最後にnextで呼ぶ
     // updateOhlcv() {
     //     const next = this.allOhlcv.pop();
     //     this.Ohlcv.push(next); //nextOhlcv
     // }
     parseOhlcv() { }
-
+    recordPnL() {
+        this.balance
+    }
 }
 
 class Strategy extends TradeManagement {
-    // constructor(ohlcv, balance, commsion) {
-    //     super(ohlcv, balance, commsion)
-    //     this.profit = 0
-    //     this.loss = 0
-    //     this.dd = 0
-    // }
+    constructor(ohlcv, balance, commsion) {
+        super(ohlcv, balance, commsion)
+        // this.profit = 0
+        // this.loss = 0
+        // this.dd = 0
+    }
     sma() {
 
     }
