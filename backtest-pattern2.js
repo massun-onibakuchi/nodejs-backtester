@@ -1,34 +1,55 @@
 'use strict'
 
-function genBackTest(ohlcv, parentClass) {
+function genBackTest(ohlcv, parentClass, from) {
     return new class BackTester extends parentClass {
-        constructor(ohlcv) {
-            super(ohlcv);
+        constructor(allOhlcv, balance, commsion, from) {
+            // super();
+            this.from = from
+            this.allOhlcv = allOhlcv.reverse()
+            this.length = allOhlcv.length;
+            this.ohlcv = []
+            this.open = []
+            this.high = []
+            this.low = []
+            this.close = []
+            this.volume = []
+            this.position = { timestamp: 0, qty: 0, aveOpenPrice: 0 }
+            super.init() //インジ初期化
         }
         runTest() {
+            // イテレートする for??
             super.next()
+            super.updateOhlcv()
         }
         // sayhello(){console.log('fefeeef');}
         addOhlcv(ohlcv) {
             this.ohlcv = ohlcv
             console.log('backtsting');
         }
-    }(ohlcv)
+        updateOhlcv() {
+            const next = this.allOhlcv.pop();
+            this.ohlcv.push(next); //nextOhlcv
+        }
+        recordPnL() {
+            this.
+        }
+
+    }(ohlcv, from)
 }
 
 class TradeManagement {
-    constructor(allOhlcv, balance, commsion) {
-        this.allOhlcv = allOhlcv.reverse()
-        this.length = allOhlcv.length;
-        this.ohlcv = []
-        this.open = []
-        this.high = []
-        this.low = []
-        this.close = []
-        this.volume = []
-        this.position = { timestamp: 0, qty: 0, aveOpenPrice: 0 }
-    }
-
+    /*     constructor(allOhlcv, balance, commsion) {
+            this.allOhlcv = allOhlcv.reverse()
+            this.length = allOhlcv.length;
+            this.ohlcv = []
+            this.open = []
+            this.high = []
+            this.low = []
+            this.close = []
+            this.volume = []
+            this.position = { timestamp: 0, qty: 0, aveOpenPrice: 0 }
+        }
+     */
     entry(qty) {
         // this.position = { timestamp: length, qty: qty, aveOpenPrice: this.open[this.open.length - 1] }
         this.position['timestamp'] = length;
@@ -36,33 +57,36 @@ class TradeManagement {
         this.position['aveOpenPrice'] = (this.position['aveOpenPrice'] * originQty + this.allOhlcv[this.length - 1][0] * qty) / (originQty + qty)
         this.position['qty'] += qty;
     }
-    buy() {
-        this.buyEntry = { timestamp: Date.now(), qty: 1, aveOpenPrice: this.open[this.open.length - 1] }
-    }
-    sell() {
-        this.buyEntry = { timestamp: Date.now(), qty: 1, aveOpenPrice: this.open[this.open.length - 1] }
-    }
+    // buy() {
+    //     this.buyEntry = { timestamp: Date.now(), qty: 1, aveOpenPrice: this.open[this.open.length - 1] }
+    // }
+    // sell() {
+    //     this.buyEntry = { timestamp: Date.now(), qty: 1, aveOpenPrice: this.open[this.open.length - 1] }
+    // }
     //最後にnextで呼ぶ
-    updateOhlcv() {
-        const next = this.allOhlcv.pop();
-        this.Ohlcv.push(next); //nextOhlcv
-    }
+    // updateOhlcv() {
+    //     const next = this.allOhlcv.pop();
+    //     this.Ohlcv.push(next); //nextOhlcv
+    // }
+    parseOhlcv() { }
 
 }
 
 class Strategy extends TradeManagement {
-    constructor(ohlcv, balance, commsion) {
-        super(ohlcv, balance, commsion)
-        this.profit = 0
-        this.loss = 0
-        this.dd = 0
-    }
+    // constructor(ohlcv, balance, commsion) {
+    //     super(ohlcv, balance, commsion)
+    //     this.profit = 0
+    //     this.loss = 0
+    //     this.dd = 0
+    // }
+    sma() {
 
-    sma() { return this.ohlcv }
+    }
     //nextはStrategyには不要かも
     next() {
         // 
     }
+    setUnusedLength() { }
     init() { }
 }
 
@@ -73,18 +97,10 @@ class MyStrategy extends Strategy {
     // イテレートするアルゴ
     next() {
         //nextはStrategyには不要かも
-        super.next()
-        super.buy()
+        // super.next()
+        // super.buy()
     }
-
-    // sayHello(){
-    //     console.log('call parent class"s method');
-    //     sayhello() // TypeError: (intermediate value).sayhello is not a function
-    // }
-    // callHoge(){
-    //     console.log(this.hoge);
-    // }
-
+    signal() { }
     // innjiとかの初期化
     init() { }
     /*     addOhlcv() {
