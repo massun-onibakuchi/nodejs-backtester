@@ -9,6 +9,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "ccxt": "^1.34.30"
+    "ccxt": "^1.34.30",
+    "eslint": "^7.9.0"
   }
 }

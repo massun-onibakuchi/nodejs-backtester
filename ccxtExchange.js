@@ -1,3 +1,7 @@
+const ccxt = require('ccxt');
+const exchangeId = 'ftx'
+const exchange = new ccxt[exchangeId.toLowerCase()]();
+
 const sortOHLCV = (candles) => {
     const OHLVC = [[], [], [], [], []];
     candles.forEach(el => {
@@ -10,19 +14,38 @@ const sortOHLCV = (candles) => {
     return OHLVC
 }
 
+// const fetchOHLCV = async (symbol, candleType) => {
+//     const since = exchange.milliseconds() - 3600000;
+//     try {
+//         const result = await exchange.fetchOHLCV(symbol, candleType, since);
+//         // const OHLCV = ohlcvUtils.sortOHLCV(result)
+//         const OHLCV = sortOHLCV(result);
+//         return OHLCV
+//     } catch (e) {
+//         console.log('e :>> ', e);
+//         if (e.name === 'BadRequest' || e.name === 'RequestTimeout' || e.name === 'NetworkError' || e.name === 'ExchangeError') return
+//         else throw e
+//     }
+// }
+
 const fetchOHLCV = async (symbol, candleType) => {
-    const since = exchange.milliseconds() - 3600000;
+    // const since = exchange.milliseconds() - 3600;
+    // const since = exchange.milliseconds() - 3600*24*8;
     try {
-        const result = await exchange.fetchOHLCV(symbol, candleType, since);
+        return await exchange.fetchOHLCV(symbol, candleType);
         // const OHLCV = ohlcvUtils.sortOHLCV(result)
-        const OHLCV = sortOHLCV(result);
-        return OHLCV
     } catch (e) {
         console.log('e :>> ', e);
         if (e.name === 'BadRequest' || e.name === 'RequestTimeout' || e.name === 'NetworkError' || e.name === 'ExchangeError') return
         else throw e
     }
 }
-const exchangeId = 'ftx'
-const exchange = new ccxt[exchangeId.toLowerCase()]();
 
+// (async () => {
+//     const res = await fetchOHLCV('BTC-PERP', '1d')
+//     console.log('res :>> ', res);
+//     // let markets = await exchange.load_markets()
+//     // console.log(exchange.id, markets)
+// })()
+
+module.exports = { fetchOHLCV }

@@ -1,13 +1,14 @@
 'use strict'
+const { fetchOHLCV } = require('./ccxtExchange');
 
 function genBackTest(ohlcv, parentClass, balance, commsion, pyramiding, from) {
     return new class BackTester extends parentClass {
         constructor(allOhlcv, balance, commsion, pyramiding, from) {
             super(balance, commsion, pyramiding);
-            // this.length = allOhlcv.length;
             // this.ohlcv = [];
             this.allOhlcv = allOhlcv.reverse()
             this.ohlcv = allOhlcv.slice(0, from);
+            this.timestamp=[]
             this.open = []
             this.high = []
             this.low = []
@@ -34,11 +35,12 @@ function genBackTest(ohlcv, parentClass, balance, commsion, pyramiding, from) {
             const length = ohlcv.length;
             for (let i = 0; i < length; i++) {
                 const el = ohlcv[i];
-                this.open.push(el[0])
-                this.high.push(el[1])
-                this.low.push(el[2])
-                this.close.push(el[3])
-                this.volume.push(el[4])
+                this.timestamp.push(el[0])
+                this.open.push(el[1])
+                this.high.push(el[2])
+                this.low.push(el[3])
+                this.close.push(el[4])
+                this.volume.push(el[5])
             }
 
         }
@@ -46,7 +48,12 @@ function genBackTest(ohlcv, parentClass, balance, commsion, pyramiding, from) {
             const next = this.allOhlcv.pop();
             this.ohlcv.unshift(next); //nextOhlcv
             // this.ohlcv.push(next); //nextOhlcv
-            this.length--;
+            this.timestamp.push(next[0])
+            this.open.push(next[1])
+            this.high.push(next[2])
+            this.low.push(next[3])
+            this.close.push(next[4])
+            this.volume.push(next[5])
             this.count++;
         }
         updateDrawDown() {
@@ -80,17 +87,16 @@ class TradeManagement {
         const length = this.open.length
         if (qty == 0) return
         const open = this.allOhlcv[length - 1][0]
-        // buypositionなら手仕舞ってドテン
+        // 違うサイドのpositionなら手仕舞ってドテン
         let pnl = 0;
         if (prevQty < 0) {
             pnl = this.recordPnL(open, prevQty);
             this.position['aveOpenPrice'] = open;
             this.position['qty'] = qty;
         }
-        //sellpositionなら積む
+        //同じサイドのpositionなら積む
         /**@todo ピラッミッディング 含み益なら積む*/
-        if (prevQty > 0) {
-            if (Math.abs(qty) >= this.pyramiding) return
+        if (prevQty > 0 && Math.abs(qty) < this.pyramiding) {
             this.position['timestamp'] = length;
             this.position['aveOpenPrice'] = (this.position['aveOpenPrice'] * prevQty + open * qty) / (prevQty + qty)
             this.position['qty'] += qty;
@@ -122,20 +128,20 @@ class TradeManagement {
     }
     valuate() {
         //buyPnlからトレード数
-        const winBuyPnl = this.buyPnL.filter(el => el > 0)
-        const lossBuyPnl = this.buyPnL.filter(el => el < 0)
-        const winSellPnl = this.sellPnL.filter(el => el > 0)
-        const lossSellPnl = this.sellPnL.filter(el => el > 0)
+        const winBuyPnL = this.buyPnL.filter(el => el > 0)
+        const lossBuyPnL = this.buyPnL.filter(el => el < 0)
+        const winSellPnL = this.sellPnL.filter(el => el > 0)
+        const lossSellPnL = this.sellPnL.filter(el => el > 0)
 
-        const tradeCount = winBuyPnl.length + lossBuyPnl.length + winSellPnl.length + lossSellPnl.length;
+        const tradeCount = winBuyPnL.length + lossBuyPnL.length + winSellPnL.length + lossSellPnL.length;
         //勝率
-        const winRatio = (winBuyPnl.length + winSellPnl.length) / tradeCount;
+        const winRatio = (winBuyPnL.length + winSellPnL.length) / tradeCount;
         //総利益 
-        const buyProfit = winBuyPnL.reduce(accu, current => accu + current)
-        const sellProfit = winSellPnL.reduce(accu, current => accu + current)
+        const buyProfit = winBuyPnL.reduce((accu, current) => accu + current,0)
+        const sellProfit = winSellPnL.reduce((accu, current) => accu + current,0)
         // 総損失 
-        const buyLoss = lossBuyPnL.reduce(accu, current => accu + current)
-        const sellLoss = lossSellPnL.reduce(accu, current => accu + current)
+        const buyLoss = lossBuyPnL.reduce((accu, current) => accu + current,0)
+        const sellLoss = lossSellPnL.reduce((accu, current) => accu + current,0)
         // 総損益 
         const totalReturn = this.provisionalBalance[this.provisionalBalance.length - 1]
         // プロフィットファクター
@@ -155,17 +161,17 @@ class TradeManagement {
         total             |${buyProfit - buyLoss}
         profit            |${buyProfit}
         loss              |${buyLoss}
-        trade count       |${winBuyPnl.length}
-        trade win count   |${winBuyPnl.length}
-        trade loss count  |${lossBuyPnl.length}
+        trade count       |${winBuyPnL.length}
+        trade win count   |${winBuyPnL.length}
+        trade loss count  |${lossBuyPnL.length}
         -------------------------------------------
         ------------------|        shor
         total             |${sellProfit - sellLoss}
         profit            |${sellProfit}
         loss              |${sellLoss} 
-        trade count       |${winBuyPnl.length}
-        trade win count   |${winBuyPnl.length}
-        trade loss count  |${lossSellPnl.length}
+        trade count       |${winBuyPnL.length}
+        trade win count   |${winBuyPnL.length}
+        trade loss count  |${lossSellPnL.length}
         `);
         return this.provisionalBalance
     }
@@ -207,12 +213,14 @@ class MyStrategy extends Strategy {
         } */
 }
 
-
-const bt = genBackTest([1, 2, 3, 4, 5], MyStrategy);
-console.log('bt :>> ', bt);
-console.log('bt instanceof MyStrategy :>> ', bt instanceof MyStrategy);
-console.log('bt instanceof Strategy :>> ', bt instanceof Strategy);
-console.log('bt.next() :>> ', bt.next());
-console.log('bt.addOhlcv([0,32,21,1,2]) :>> ', bt.addOhlcv([0, 32, 21, 1, 2]));
-console.log('bt.ohlcv :>> ', bt.ohlcv);
-console.log('bt.buyEntry :>> ', bt.buyEntry);
+(async () => {
+    const ohlcv = await fetchOHLCV('BTC-PERP', '1d')
+    // console.log('ohlcv :>> ', ohlcv);
+    const bt = genBackTest(ohlcv, MyStrategy,100000,0,0,3);
+    console.log('bt :>> ', bt);
+    console.log('bt instanceof MyStrategy :>> ', bt instanceof MyStrategy);
+    console.log('bt instanceof Strategy :>> ', bt instanceof Strategy);
+    console.log('bt.ohlcv :>> ', bt.ohlcv);
+    // console.log('bt.next() :>> ', bt.next());
+    // console.log('bt.valuate() :>> ', bt.valuate());
+})()
