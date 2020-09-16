@@ -3,7 +3,7 @@
 function genBackTest(ohlcv, parentClass, balance, commsion, pyramiding, from) {
     return new class BackTester extends parentClass {
         constructor(data, balance, commsion, pyramiding, from) {
-            super(balance, commsion, pyramiding);
+            super(balance, commsion, pyramiding, from);
             // this.ohlcv = [];
             this.from = from;
             this.data = data.reverse() //this.data new->old //data old->new
@@ -18,20 +18,25 @@ function genBackTest(ohlcv, parentClass, balance, commsion, pyramiding, from) {
             super.init(data) //インジ初期化
         }
         run() {
-            // イテレートする for??
-            const length = this.data.length - this.ohlcv.length
+            // const length = this.data.length //  -this.ohlcv.length
+            const length = this.data.length //  -this.from 
             for (let i = 0; i < length; i++) {
                 // console.log(
-                //     'i :>> ', i,
-                //     // 'this.buyPnL[this.buyPnL.length-1],', this.buyPnL[this.buyPnL.length - 1],
-                //     // 'this.sellPnL[this.sellPnL.length-1],', this.sellPnL[this.sellPnL.length - 1],
-                //     //     'this.data.length :>> ', this.data.length,
-                //     //     'this.data[最後の要素] :>> ', this.data[this.data.length - 1],
-                //     //     'this.timestamp[0] :>> ', this.timestamp[0],
-                //     //     'this.open[0] :>> ', this.open[0],
+                //     // 'this.timestamp[0] :>> ', this.timestamp[0],
+                //     //     'i :>> ', i,
+                //     'b len', this.buyPnL.length - 1,
+                //     's len', this.sellPnL.length - 1,
+                //     'provisonal len', this.netBalance.length - 1,
+                //     'ohlcv len', this.ohlcv.length - 1,
+                //     'data len', this.data.length - 1,
+                //     // '.buyPnL[]', this.buyPnL[this.buyPnL.length - 1],
+                //     // '.sellPnL[]', this.sellPnL[this.sellPnL.length - 1],
+                //     // 'provisional[pre last]:>> ', this.provisionalBalance[this.provisionalBalance.length - 2],
+                //     // 'provisional[last]:>> ', this.provisionalBalance[this.provisionalBalance.length - 1],
+                //     //     //     'this.data.length :>> ', this.data.length,
+                //     //     //     'this.data[最後の要素] :>> ', this.data[this.data.length - 1],
+                //     //     //     'this.open[0] :>> ', this.open[0],
                 // )
-                // console.log('this.maxDD :>> ', this.maxDD);
-                console.log('provisional[last]:>> ', this.provisionalBalance[this.provisionalBalance.length - 1]);
                 super.next()
                 this.updateBalance()
                 this.updateDrawDown()
@@ -67,7 +72,7 @@ function genBackTest(ohlcv, parentClass, balance, commsion, pyramiding, from) {
             this.volume.unshift(next[5])
         }
         updateDrawDown() {
-            const dd = this.maxBalance - this.provisionalBalance[this.provisionalBalance.length - 1]
+            const dd = this.maxBalance - this.netBalance[this.netBalance.length - 1]
             if (dd - this.maxDD > 0) this.maxDD = dd;
         }
         plot() { }
@@ -76,7 +81,7 @@ function genBackTest(ohlcv, parentClass, balance, commsion, pyramiding, from) {
 }
 
 class TradeManagement {
-    constructor(balance, commsion, pyramiding) {
+    constructor(balance, commsion, pyramiding, from) {
         this.balance = balance;
         this.commsion = commsion;
         this.pyramiding = pyramiding;
@@ -84,7 +89,7 @@ class TradeManagement {
         this.sellPnL = [0]
         this.maxDD = 0;
         this.maxBalance = balance;
-        this.provisionalBalance = [balance];
+        this.netBalance = Array(from - 1).fill(balance);
         this.position = { timestamp: 0, qty: 0, aveOpenPrice: 0 }
     }
 
@@ -100,19 +105,20 @@ class TradeManagement {
         let pnl = 0;
         // ノーポジ
         if (prevQty == 0) {
+            this.position['timestamp'] = this.data[length - 1][0];
             this.position['aveOpenPrice'] = open;
             this.position['qty'] = qty;
         }
         // 違うサイドのpositionなら手仕舞ってドテン
         if (prevQty < 0) {
-            pnl = this.recordPnL(open, prevQty);
+            pnl = this.calcPnL(open, prevQty);
+            this.position['timestamp'] = this.data[length - 1][0];
             this.position['aveOpenPrice'] = open;
             this.position['qty'] = qty;
         }
         //同じサイドのpositionなら積む
         /**@todo ピラッミッディング 含み益なら積む*/
         if (prevQty > 0 && Math.abs(qty) < this.pyramiding) {
-            this.position['timestamp'] = length;
             this.position['aveOpenPrice'] = (this.position['aveOpenPrice'] * prevQty + open * qty) / (prevQty + qty)
             this.position['qty'] += qty;
         }
@@ -138,16 +144,28 @@ class TradeManagement {
         // this.updateBalance(pnl);
     }
     updateBalance() {
-        const length = this.provisionalBalance.length;
-        const pnlLength = this.buyPnL.length;
-        const balance = this.provisionalBalance[length - 1] + this.buyPnL[pnlLength - 1] + this.sellPnL[pnlLength - 1];
-        this.provisionalBalance.push(balance)
+        if (this.position['timestamp'] >= this.timestamp[0]) {
+            //こうするとbuyPnLとproviBalaceとの長さが同じにできるかも
+            // if (this.position['timestamp'] >= this.timestamp[this.timestamp.length - 1]) {
+            // this.buyPnL.push(0);
+            // this.sellPnL.push(0);
+            // 
+            // }
+            const length = this.netBalance.length;
+            const pnlLength = this.buyPnL.length;
+            const pnl = this.buyPnL[pnlLength - 1] + this.sellPnL[pnlLength - 1];
+            const balance = this.netBalance[length - 1] + pnl
+            this.netBalance.push(balance)
+        }
     }
     // getBalance() {
     //     return this.provisionalBalance[this.ohlcv.length - 1];
     // }
-    recordPnL(exitPrice, qty) {
+    calcPnL(exitPrice, qty) {
         return qty * (exitPrice - this.position['aveOpenPrice']);
+    }
+    calcPercent(numerator, denominator) {
+        return Math.round(100 * 100 * numerator / denominator) / 100;
     }
     valuate() {
         //buyPnlからトレード数
@@ -166,39 +184,42 @@ class TradeManagement {
         const buyLoss = lossBuyPnL.reduce((accu, current) => accu + current, 0)
         const sellLoss = lossSellPnL.reduce((accu, current) => accu + current, 0)
         // 総損益 
-        const totalReturn = this.provisionalBalance[this.provisionalBalance.length - 1]
+        const totalReturn = this.netBalance[this.netBalance.length - 1]
+        const buyReturn = sellProfit + sellLoss
+        const sellReturn = sellProfit + sellLoss
         // プロフィットファクター
         const profitFactor = -(buyProfit + sellProfit) / (buyLoss + sellLoss);
         //DD:資産額を時系列で並べて、それぞれの時点以前の最大資産額からの差を計算して、 そのうち最大のマイナス幅のものが最大ドローダウン
-        const maxDD = this.maxDD
+        const ddPercent = 100 * (this.maxBalance - this.maxDD) / this.maxBalance
+
         console.log(`
         ------------------------------
         initial balance:${this.balance}
-        total return:${totalReturn}
+        total return:${totalReturn} (${this.calcPercent(totalReturn, this.balance)}%)
         PF:${profitFactor}
-        max draw down:${maxDD}
+        max draw down:${this.maxDD} (${ddPercent}%)
         win ration:${winRatio}
         trade counts:${tradeCount}
         ------------------------------
                         long   
-        total             |${buyProfit + buyLoss}
-        profit            |${buyProfit}
-        loss              |${buyLoss}
+        total             |${buyReturn}  (${this.calcPercent(buyReturn, this.balance)}%)
+        profit            |${buyProfit}  (${this.calcPercent(buyProfit, this.balance)}%)
+        loss              |${buyLoss}  (${this.calcPercent(buyLoss, this.balance)}%)
         trade count       |${winBuyPnL.length + lossBuyPnL.length}
         trade win count   |${winBuyPnL.length}
         trade loss count  |${lossBuyPnL.length}
         -------------------------------
                         short
-        total             |${sellProfit + sellLoss}
-        profit            |${sellProfit}
-        loss              |${sellLoss} 
+        total             |${sellReturn} (${this.calcPercent(sellReturn, this.balance)}%)
+        profit            |${sellProfit} (${this.calcPercent(sellProfit, this.balance)}%)
+        loss              |${sellLoss} (${this.calcPercent(sellLoss, this.balance)}%)
         trade count       |${winSellPnL.length + lossSellPnL.length}
         trade win count   |${winSellPnL.length}
         trade loss count  |${lossSellPnL.length}
         `);
         // console.log('this.buyPnL :>> ', this.buyPnL);
         // console.log('this.sellPnL :>> ', this.sellPnL);
-        return this.provisionalBalance
+        return this.netBalance
     }
 }
 

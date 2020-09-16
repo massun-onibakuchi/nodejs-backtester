@@ -39,7 +39,7 @@ class MyStrategy extends Strategy {
         // super.next()
         // super.buy()
         if (this.close[0] > this.open[0] && this.close[1] > this.open[1]) this.buy(1)
-        if (this.open[0] > this.close[0] && this.open[1] > this.close[1]) this.sell(1)
+        else if (this.open[0] > this.close[0] && this.open[1] > this.close[1]) this.sell(1)
     }
     // innjiとかの初期化
     init() { }

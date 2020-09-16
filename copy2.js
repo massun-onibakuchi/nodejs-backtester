@@ -21,17 +21,19 @@ function genBackTest(ohlcv, parentClass, balance, commsion, pyramiding, from) {
             // イテレートする for??
             const length = this.data.length - this.ohlcv.length
             for (let i = 0; i < length; i++) {
-                // console.log(
+                console.log(
+                    'this.timestamp[0] :>> ', this.timestamp[0],
                 //     'i :>> ', i,
-                //     // 'this.buyPnL[this.buyPnL.length-1],', this.buyPnL[this.buyPnL.length - 1],
-                //     // 'this.sellPnL[this.sellPnL.length-1],', this.sellPnL[this.sellPnL.length - 1],
+                    '.buyPnL[]', this.buyPnL[this.buyPnL.length - 1],
+                    '.sellPnL[]', this.sellPnL[this.sellPnL.length - 1],
+                    'provisional[pre last]:>> ', this.provisionalBalance[this.provisionalBalance.length - 2],
+                    'provisional[last]:>> ', this.provisionalBalance[this.provisionalBalance.length - 1],
                 //     //     'this.data.length :>> ', this.data.length,
                 //     //     'this.data[最後の要素] :>> ', this.data[this.data.length - 1],
-                //     //     'this.timestamp[0] :>> ', this.timestamp[0],
                 //     //     'this.open[0] :>> ', this.open[0],
-                // )
+                )
                 // console.log('this.maxDD :>> ', this.maxDD);
-                console.log('provisional[last]:>> ', this.provisionalBalance[this.provisionalBalance.length - 1]);
+
                 super.next()
                 this.updateBalance()
                 this.updateDrawDown()
