@@ -3,7 +3,7 @@ const { fetchOHLCV, sortOHLCV } = require('./ccxtExchange');
 const { calcMomentum } = require('./indicator');
 
 (async () => {
-    const candles = await fetchOHLCV('BTC-PERP', '1h', 3600 * 1000 * 24 * 30*9)
+    const candles = await fetchOHLCV('BTC-PERP', '1h', 3600 * 1000 * 24 * 30 * 9)
     console.log('candles.length :>> ', candles.length);
     let data = sortOHLCV(candles);
     // console.log('calcMomentum(data,20) :>> ', calcMomentum(data,20));
@@ -62,8 +62,8 @@ class MyStrategy extends Strategy {
     // イテレートするアルゴ
     next() {
         //変曲点の前後でローソク足2本ずつ続いたら
-        const isUpContinual = this.ttm[0] >= this.ttm[1] && this.ttm[4] >= this.ttm[3]
-        const isDownContinual = this.ttm[0] <= this.ttm[1] && this.ttm[3] >= this.ttm[4]
+        const isUpContinual = this.ttm[0] >= this.ttm[1] //&& this.ttm[4] >= this.ttm[3]
+        const isDownContinual = this.ttm[0] <= this.ttm[1] //&& this.ttm[3] >= this.ttm[4]
         // const isOver10Ave = (this.volume[0] + this.volume[1]) / 2 >= this.volume.slice(0, 11).reduce((accum, current) => accum + current) / 10
         // const isDownStrong = isOver10Ave
 
@@ -72,12 +72,12 @@ class MyStrategy extends Strategy {
         const isDownTrend = this.ttm[1] < this.ttm[2] && this.ttm[2] > this.ttm[3] && isDownContinual //and isDownStrong 
 
         //現在の前つまり，直前にTTM傾きの符号が変化していたか，つまり頻繁に変曲点があるのか
-        const isBuyFrequent = this.ttm[2] > this.ttm[3] && this.ttm[4] > this.ttm[3]
-        const isSellFrequent = this.ttm[2] < this.ttm[3] && this.ttm[3] > this.ttm[4]
+        const isBuyFrequent = this.ttm[4] > this.ttm[3] // && this.ttm[2] > this.ttm[3]
+        const isSellFrequent = this.ttm[3] > this.ttm[4] // && this.ttm[2] < this.ttm[3]
         const isBreakDown = this.close[0] - this.open[0] < 0;
 
-        const isBuyEntry = isUpTrend && (!isSellFrequent) // && isBreakUp 
-        const isShortEntry = isDownTrend && (!isBuyFrequent) && isBreakDown
+        const isBuyEntry = isUpTrend //&& (!isSellFrequent) // && isBreakUp 
+        const isShortEntry = isDownTrend //&& (!isBuyFrequent) && isBreakDown
         if (isBuyEntry) this.buy(1)
         if (isShortEntry) this.sell(1)
         // if (this.close[0] > this.open[0] && this.close[1] > this.open[1]) this.buy(1)
