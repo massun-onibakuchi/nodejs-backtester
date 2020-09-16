@@ -154,7 +154,7 @@ class TradeManagement {
         const winBuyPnL = this.buyPnL.filter(el => el > 0)
         const lossBuyPnL = this.buyPnL.filter(el => el < 0)
         const winSellPnL = this.sellPnL.filter(el => el > 0)
-        const lossSellPnL = this.sellPnL.filter(el => el < 0)
+        const lossSellPnL = this.sellPnL.filter(el => el > 0)
 
         const tradeCount = winBuyPnL.length + lossBuyPnL.length + winSellPnL.length + lossSellPnL.length;
         //勝率
