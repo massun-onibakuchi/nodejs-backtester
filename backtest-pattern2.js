@@ -80,7 +80,7 @@ function genBackTest(ohlcv, parentClass, balance, commsion, pyramiding, from) {
         plot() {
             const data = [{ x: [...this.netBalance.keys()], y: this.netBalance, type: 'line' }];
             nodeplotlib.plot(data)
-         }
+        }
 
     }(ohlcv, balance, commsion, pyramiding, from)
 }
@@ -168,8 +168,8 @@ class TradeManagement {
     calcPnL(exitPrice, qty) {
         return qty * (exitPrice - this.position['aveOpenPrice']);
     }
-    calcPercent(numerator, denominator) {
-        return Math.round(100 * 100 * numerator / denominator) / 100;
+    calcPercent(numerator, denominator, digit = 0) {
+        return Math.round(100 * 100 * 10 ** digit * numerator / denominator) / (100 * 10 ** digit);
     }
     valuate() {
         //buyPnlからトレード数
@@ -180,7 +180,7 @@ class TradeManagement {
 
         const tradeCount = winBuyPnL.length + lossBuyPnL.length + winSellPnL.length + lossSellPnL.length;
         //勝率
-        const winRatio = (winBuyPnL.length + winSellPnL.length) / tradeCount;
+        const winRatio = this.calcPercent(winBuyPnL.length + winSellPnL.length, tradeCount)/100
         //総利益 
         const buyProfit = winBuyPnL.reduce((accu, current) => accu + current, 0)
         const sellProfit = winSellPnL.reduce((accu, current) => accu + current, 0)
@@ -192,14 +192,14 @@ class TradeManagement {
         const buyReturn = sellProfit + sellLoss
         const sellReturn = sellProfit + sellLoss
         // プロフィットファクター
-        const profitFactor = -(buyProfit + sellProfit) / (buyLoss + sellLoss);
+        const profitFactor = -this.calcPercent(buyProfit+sellProfit,buyLoss+sellLoss)/100
         //DD:資産額を時系列で並べて、それぞれの時点以前の最大資産額からの差を計算して、 そのうち最大のマイナス幅のものが最大ドローダウン
-        const ddPercent = 100 * (this.maxBalance - this.maxDD) / this.maxBalance
+        const ddPercent = this.calcPercent(this.maxBalance - this.maxDD, this.maxBalance);
 
         console.log(`
         ------------------------------
         initial balance:${this.balance}
-        total return:${totalReturn} (${this.calcPercent(totalReturn-this.balance, this.balance)}%)
+        total return:${totalReturn} (${this.calcPercent(totalReturn - this.balance, this.balance, 2)}%)
         PF:${profitFactor}
         max draw down:${this.maxDD} (${ddPercent}%)
         win ration:${winRatio}

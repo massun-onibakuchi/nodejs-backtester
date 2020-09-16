@@ -11,7 +11,7 @@ const nodeplotlib = require('nodeplotlib');
     // console.log('bt.ohlcv :>> ', bt.ohlcv);
     // console.log('bt.next() :>> ', bt.next());
     bt.run()
-    bt.plot()
+    // bt.plot()
     // console.log('bt.valuate() :>> ', bt.valuate());
     // console.log('bt :>> ', bt);
 })()
