@@ -3,11 +3,14 @@ const { fetchOHLCV, sortOHLCV } = require('./ccxtExchange');
 const { calcMomentum } = require('./indicator');
 
 (async () => {
-    const candles = await fetchOHLCV('BTC-PERP', '1h', 3600 * 1000 * 24 * 4)
-    // let data = sortOHLCV(candles);
+    const candles = await fetchOHLCV('BTC-PERP', '1h', 3600 * 1000 * 24 * 30*9)
+    console.log('candles.length :>> ', candles.length);
+    let data = sortOHLCV(candles);
+    // console.log('calcMomentum(data,20) :>> ', calcMomentum(data,20));
+
     const bt = genBackTest(candles, MyStrategy, 100000, 0, 0, 5);
     bt.run()
-    // bt.plot()
+    bt.plot()
     // console.log('bt instanceof MyStrategy :>> ', bt instanceof MyStrategy);
     // console.log('bt instanceof Strategy :>> ', bt instanceof Strategy);
     // console.log('bt.ohlcv :>> ', bt.ohlcv);
@@ -32,7 +35,7 @@ class Strategy extends TradeManagement {
     }
 
     init(data, from) {
-        const length = data[0].length;
+        const length = data.length;
         const [open, high, low, close] = [[], [], [], []]
         for (let i = 0; i < length; i++) {
             const el = data[i];
@@ -44,7 +47,6 @@ class Strategy extends TradeManagement {
         // const ttm = calcMomentum([open, high, low, close], 20)
         // this.ttmHistory = ttm.reverse()
         // this.ttm = ttm.slice(0, from).reverse()
-
         this.ttmHistory = calcMomentum([open, high, low, close], 20)
         const pre = this.ttmHistory.splice(0, from).reverse()
         this.ttm = pre
@@ -76,17 +78,11 @@ class MyStrategy extends Strategy {
 
         const isBuyEntry = isUpTrend && (!isSellFrequent) // && isBreakUp 
         const isShortEntry = isDownTrend && (!isBuyFrequent) && isBreakDown
-
         if (isBuyEntry) this.buy(1)
         if (isShortEntry) this.sell(1)
         // if (this.close[0] > this.open[0] && this.close[1] > this.open[1]) this.buy(1)
         // else if (this.open[0] > this.close[0] && this.open[1] > this.close[1]) this.sell(1)
     }
-    // innjiとかの初期化
-    init(data) { return super.init(data) }
-    /*     addOhlcv() {
-            super.addOhlcv()
-            console.log('addOhlcv in myStrategy');
-        } */
+
 }
 
