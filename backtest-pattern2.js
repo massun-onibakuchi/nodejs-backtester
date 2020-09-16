@@ -1,4 +1,5 @@
 'use strict'
+const nodeplotlib = require('nodeplotlib');
 
 function genBackTest(ohlcv, parentClass, balance, commsion, pyramiding, from) {
     return new class BackTester extends parentClass {
@@ -76,7 +77,10 @@ function genBackTest(ohlcv, parentClass, balance, commsion, pyramiding, from) {
             if (dd - this.maxDD > 0) this.maxDD = dd;
         }
         report() { return this.netBalance }
-        plot() { }
+        plot() {
+            const data = [{ x: [...this.netBalance.keys()], y: this.netBalance, type: 'line' }];
+            nodeplotlib.plot(data)
+         }
 
     }(ohlcv, balance, commsion, pyramiding, from)
 }
@@ -150,7 +154,6 @@ class TradeManagement {
             // if (this.position['timestamp'] >= this.timestamp[this.timestamp.length - 1]) {
             // this.buyPnL.push(0);
             // this.sellPnL.push(0);
-            // 
             // }
             const length = this.netBalance.length;
             const pnlLength = this.buyPnL.length;
@@ -196,7 +199,7 @@ class TradeManagement {
         console.log(`
         ------------------------------
         initial balance:${this.balance}
-        total return:${totalReturn} (${this.calcPercent(totalReturn, this.balance)}%)
+        total return:${totalReturn} (${this.calcPercent(totalReturn-this.balance, this.balance)}%)
         PF:${profitFactor}
         max draw down:${this.maxDD} (${ddPercent}%)
         win ration:${winRatio}

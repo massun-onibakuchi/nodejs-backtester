@@ -1,5 +1,6 @@
 const { genBackTest,TradeManagement } = require('./backtest-pattern2');
 const { fetchOHLCV } = require('./ccxtExchange');
+const nodeplotlib = require('nodeplotlib');
 
 (async () => {
     const ohlcv = await fetchOHLCV('BTC-PERP', '1d')
@@ -10,6 +11,7 @@ const { fetchOHLCV } = require('./ccxtExchange');
     // console.log('bt.ohlcv :>> ', bt.ohlcv);
     // console.log('bt.next() :>> ', bt.next());
     bt.run()
+    bt.plot()
     // console.log('bt.valuate() :>> ', bt.valuate());
     // console.log('bt :>> ', bt);
 })()
@@ -48,3 +50,4 @@ class MyStrategy extends Strategy {
             console.log('addOhlcv in myStrategy');
         } */
 }
+
