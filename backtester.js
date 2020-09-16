@@ -41,7 +41,7 @@ function genBackTest(ohlcv, parentClass, balance, commsion, pyramiding, from) {
                 super.next()
                 this.updateBalance()
                 this.updateDrawDown()
-
+                super.updateIndi()
                 this.updateOhlcv()
             }
             this.valuate()
