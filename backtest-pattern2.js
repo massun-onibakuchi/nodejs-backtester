@@ -75,6 +75,7 @@ function genBackTest(ohlcv, parentClass, balance, commsion, pyramiding, from) {
             const dd = this.maxBalance - this.netBalance[this.netBalance.length - 1]
             if (dd - this.maxDD > 0) this.maxDD = dd;
         }
+        report() { return this.netBalance }
         plot() { }
 
     }(ohlcv, balance, commsion, pyramiding, from)
@@ -219,7 +220,6 @@ class TradeManagement {
         `);
         // console.log('this.buyPnL :>> ', this.buyPnL);
         // console.log('this.sellPnL :>> ', this.sellPnL);
-        return this.netBalance
     }
 }
 
