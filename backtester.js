@@ -6,17 +6,21 @@ function genBackTest(ohlcv, parentClass, balance, commsion, pyramiding, from) {
         constructor(data, balance, commsion, pyramiding, from) {
             super(balance, commsion, pyramiding, from);
             // this.ohlcv = [];
-            this.from = from;
-            this.data = data.reverse() //this.data new->old //data old->new
-            this.ohlcv = data.slice(0, from).reverse();// new->old
+            this.from;
             this.timestamp = [] //new->old
             this.open = []
             this.high = []
             this.low = []
             this.close = []
             this.volume = []
+            super.init(data, from) //インジ初期化
+            // this.data = data.slice(this.from,).reverse() //this.data new->old //data old->new
+            // this.ohlcv = data.slice(0, this.from).reverse();// new->old
+            this.data = data
+            const pre = this.data.splice(0, this.from).reverse()
+            this.ohlcv = pre
+            this.data = data.reverse() //this.data new->old //data old->new
             this.parseOhlcv()
-            super.init(data) //インジ初期化
         }
         run() {
             // const length = this.data.length //  -this.ohlcv.length
@@ -180,7 +184,7 @@ class TradeManagement {
 
         const tradeCount = winBuyPnL.length + lossBuyPnL.length + winSellPnL.length + lossSellPnL.length;
         //勝率
-        const winRatio = this.calcPercent(winBuyPnL.length + winSellPnL.length, tradeCount)/100
+        const winRatio = this.calcPercent(winBuyPnL.length + winSellPnL.length, tradeCount) / 100
         //総利益 
         const buyProfit = winBuyPnL.reduce((accu, current) => accu + current, 0)
         const sellProfit = winSellPnL.reduce((accu, current) => accu + current, 0)
@@ -192,7 +196,7 @@ class TradeManagement {
         const buyReturn = sellProfit + sellLoss
         const sellReturn = sellProfit + sellLoss
         // プロフィットファクター
-        const profitFactor = -this.calcPercent(buyProfit+sellProfit,buyLoss+sellLoss)/100
+        const profitFactor = -this.calcPercent(buyProfit + sellProfit, buyLoss + sellLoss) / 100
         //DD:資産額を時系列で並べて、それぞれの時点以前の最大資産額からの差を計算して、 そのうち最大のマイナス幅のものが最大ドローダウン
         const ddPercent = this.calcPercent(this.maxBalance - this.maxDD, this.maxBalance);
 

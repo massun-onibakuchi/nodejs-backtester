@@ -4,14 +4,47 @@ const { calcMomentum } = require('./indicator');
 
 (async () => {
     const candles = await fetchOHLCV('BTC-PERP', '1h', 3600 * 1000 * 24 * 4)
-    // let data = sortOHLCV(candles);
-    const bt = genBackTest(candles, MyStrategy, 100000, 0, 0, 5);
-    bt.run()
-    // bt.plot()
+    let data = sortOHLCV(candles);
+    let ohlcv2 = data.concat()
+    let data2 = candles.concat()
+    let pre;
+    let diff = 5
+    console.log('data0].length :>> ', data[0].length)
+
+    let ttmHistory = calcMomentum(ohlcv2, 20)
+    console.log('ttmHistory.length :>> ', ttmHistory.length);
+    pre = ttmHistory.splice(0, diff).reverse()
+    let ttm = pre
+    ttmHistory = ttmHistory.reverse()
+    console.log('ttmHistory.length :>> ', ttmHistory.length);
+    const length = ttm.length
+    console.log('ttm.length :>> ', length);//5
+    console.log('pre.length :>> ', pre.length);//5
+    // pre+ttm=ttmHistory  should be 
+    //ttm+
+    console.log('ohlcv2.length :>> ', ohlcv2[2].length);
+    const consum = ohlcv2[0].length - ttmHistory.length
+
+    console.log('consum :>> ', consum);
+    const from = consum
+
+    pre = data2.splice(0, from).reverse()
+    let ohlcv = pre
+    data2 = data2.reverse() //this.data new->old //data old->new
+    // console.log('data :>> ', data2) // ttmHistory==
+    console.log('pre.length :>> ', pre.length);
+    console.log('data[0].length :>> ', data2.length) // ttmHistory==
+    // console.log('ohlcv2[0].length :>> ', ohlcv2[0].length);
+
+    // const from = from + length - ttm.length
+    // console.log('ohlcv :>> ', ohlcv);
+    // const bt = genBackTest(ohlcv, MyStrategy, 100000, 0, 0, 5);
+    // bt.run()
     // console.log('bt instanceof MyStrategy :>> ', bt instanceof MyStrategy);
     // console.log('bt instanceof Strategy :>> ', bt instanceof Strategy);
     // console.log('bt.ohlcv :>> ', bt.ohlcv);
     // console.log('bt.next() :>> ', bt.next());
+    // bt.plot()
     // console.log('bt.valuate() :>> ', bt.valuate());
     // console.log('bt :>> ', bt);
 })()

@@ -28,11 +28,11 @@ const sortOHLCV = (candles) => {
 //     }
 // }
 
-const fetchOHLCV = async (symbol, candleType) => {
-    // const since = exchange.milliseconds() - 3600;
+const fetchOHLCV = async (symbol, candleType,before) => {
+    const since = exchange.milliseconds() - before;
     // const since = exchange.milliseconds() - 3600*24*8;
     try {
-        return await exchange.fetchOHLCV(symbol, candleType);
+        return await exchange.fetchOHLCV(symbol, candleType,since);
         // const OHLCV = ohlcvUtils.sortOHLCV(result)
     } catch (e) {
         console.log('e :>> ', e);
@@ -48,4 +48,4 @@ const fetchOHLCV = async (symbol, candleType) => {
 //     // console.log(exchange.id, markets)
 // })()
 
-module.exports = { fetchOHLCV }
+module.exports = { fetchOHLCV,sortOHLCV }
