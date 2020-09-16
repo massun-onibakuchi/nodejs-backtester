@@ -1,38 +1,45 @@
 'use strict'
-const { fetchOHLCV } = require('./ccxtExchange');
 
 function genBackTest(ohlcv, parentClass, balance, commsion, pyramiding, from) {
     return new class BackTester extends parentClass {
-        constructor(allOhlcv, balance, commsion, pyramiding, from) {
+        constructor(data, balance, commsion, pyramiding, from) {
             super(balance, commsion, pyramiding);
             // this.ohlcv = [];
-            this.allOhlcv = allOhlcv.reverse()
-            this.ohlcv = allOhlcv.slice(0, from);
-            this.timestamp=[]
+            this.from = from;
+            this.data = data.reverse() //this.data new->old //data old->new
+            this.ohlcv = data.slice(0, from).reverse();// new->old
+            this.timestamp = [] //new->old
             this.open = []
             this.high = []
             this.low = []
             this.close = []
             this.volume = []
-            this.parseOhlcv(ohlcv)
-            this.from = from;
-            super.init(allOhlcv) //インジ初期化
+            this.parseOhlcv()
+            super.init(data) //インジ初期化
         }
-        runTest() {
+        run() {
             // イテレートする for??
-            const length = this.allOhlcv.length - this.ohlcv.length
+            const length = this.data.length - this.ohlcv.length
             for (let i = 0; i < length; i++) {
+                console.log('i :>> ', i,
+                    'this.buyPnL[this.buyPnL.length-1],', this.buyPnL[this.buyPnL.length - 1],
+                    'this.sellPnL[this.sellPnL.length-1],', this.sellPnL[this.sellPnL.length - 1],
+                    //     'this.data.length :>> ', this.data.length,
+                    //     'this.data[最後の要素] :>> ', this.data[this.data.length - 1],
+                    //     'this.timestamp[0] :>> ', this.timestamp[0],
+                    //     'this.open[0] :>> ', this.open[0],
+                )
                 super.next()
                 this.updateOhlcv()
                 this.updateDrawDown()
             }
             this.valuate()
         }
-        addOhlcv(ohlcv) {
-            this.ohlcv = ohlcv
-        }
-        parseOhlcv(ohlcv) {
-            const length = ohlcv.length;
+        // addOhlcv(ohlcv) {
+        //     this.ohlcv = ohlcv
+        // }
+        parseOhlcv() {
+            const length = this.ohlcv.length;
             for (let i = 0; i < length; i++) {
                 const el = ohlcv[i];
                 this.timestamp.push(el[0])
@@ -42,19 +49,17 @@ function genBackTest(ohlcv, parentClass, balance, commsion, pyramiding, from) {
                 this.close.push(el[4])
                 this.volume.push(el[5])
             }
-
         }
         updateOhlcv() {
-            const next = this.allOhlcv.pop();
-            this.ohlcv.unshift(next); //nextOhlcv
-            // this.ohlcv.push(next); //nextOhlcv
-            this.timestamp.push(next[0])
-            this.open.push(next[1])
-            this.high.push(next[2])
-            this.low.push(next[3])
-            this.close.push(next[4])
-            this.volume.push(next[5])
-            this.count++;
+            //next new
+            const next = this.data.pop();
+            this.ohlcv.unshift(next);
+            this.timestamp.unshift(next[0])
+            this.open.unshift(next[1])
+            this.high.unshift(next[2])
+            this.low.unshift(next[3])
+            this.close.unshift(next[4])
+            this.volume.unshift(next[5])
         }
         updateDrawDown() {
             const dd = this.maxBalance - this.provisionalBalance[this.ohlcv.length - 1]
@@ -67,10 +72,11 @@ function genBackTest(ohlcv, parentClass, balance, commsion, pyramiding, from) {
 
 class TradeManagement {
     constructor(balance, commsion, pyramiding) {
+        this.balance = balance;
         this.commsion = commsion;
         this.pyramiding = pyramiding;
-        this.buyPnL = []
-        this.sellPnL = []
+        this.buyPnL = [0]
+        this.sellPnL = [0]
         this.maxDD = 0;
         this.maxBalance = balance;
         this.provisionalBalance = [balance];
@@ -84,9 +90,9 @@ class TradeManagement {
         return (qty > 0 ? this.buy(qty) : this.sell(qty))
     }
     _entry(qty, prevQty) {
-        const length = this.open.length
+        const length = this.data.length
         if (qty == 0) return
-        const open = this.allOhlcv[length - 1][0]
+        const open = this.data[length - 1][1]
         // 違うサイドのpositionなら手仕舞ってドテン
         let pnl = 0;
         if (prevQty < 0) {
@@ -137,11 +143,11 @@ class TradeManagement {
         //勝率
         const winRatio = (winBuyPnL.length + winSellPnL.length) / tradeCount;
         //総利益 
-        const buyProfit = winBuyPnL.reduce((accu, current) => accu + current,0)
-        const sellProfit = winSellPnL.reduce((accu, current) => accu + current,0)
+        const buyProfit = winBuyPnL.reduce((accu, current) => accu + current, 0)
+        const sellProfit = winSellPnL.reduce((accu, current) => accu + current, 0)
         // 総損失 
-        const buyLoss = lossBuyPnL.reduce((accu, current) => accu + current,0)
-        const sellLoss = lossSellPnL.reduce((accu, current) => accu + current,0)
+        const buyLoss = lossBuyPnL.reduce((accu, current) => accu + current, 0)
+        const sellLoss = lossSellPnL.reduce((accu, current) => accu + current, 0)
         // 総損益 
         const totalReturn = this.provisionalBalance[this.provisionalBalance.length - 1]
         // プロフィットファクター
@@ -177,50 +183,6 @@ class TradeManagement {
     }
 }
 
-class Strategy extends TradeManagement {
-    constructor(...args) {
-        super(...args)
-    }
-    sma() {
 
-    }
-    //nextはStrategyには不要かも
-    next() {
-        // 
-    }
-    setUnusedLength() { }
-    init() { }
-}
+module.exports = { genBackTest, TradeManagement }
 
-class MyStrategy extends Strategy {
-    constructor(...args) {
-        super(...args);
-    }
-    // イテレートするアルゴ
-    next() {
-        //nextはStrategyには不要かも
-        // super.next()
-        // super.buy()
-
-        if (this.close[0] > this.open[0] && this.close[1] > this.open[1]) this.buy(1)
-        if (this.open[0] > this.close[0] && this.open[1] > this.close[1]) this.sell(1)
-    }
-    // innjiとかの初期化
-    init() { }
-    /*     addOhlcv() {
-            super.addOhlcv()
-            console.log('addOhlcv in myStrategy');
-        } */
-}
-
-(async () => {
-    const ohlcv = await fetchOHLCV('BTC-PERP', '1d')
-    // console.log('ohlcv :>> ', ohlcv);
-    const bt = genBackTest(ohlcv, MyStrategy,100000,0,0,3);
-    console.log('bt :>> ', bt);
-    console.log('bt instanceof MyStrategy :>> ', bt instanceof MyStrategy);
-    console.log('bt instanceof Strategy :>> ', bt instanceof Strategy);
-    console.log('bt.ohlcv :>> ', bt.ohlcv);
-    // console.log('bt.next() :>> ', bt.next());
-    // console.log('bt.valuate() :>> ', bt.valuate());
-})()
