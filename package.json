@@ -7,5 +7,14 @@
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "",
+<<<<<<< HEAD
   "license": "ISC"
+=======
+  "license": "ISC",
+  "dependencies": {
+    "ccxt": "^1.34.30",
+    "eslint": "^7.9.0",
+    "nodeplotlib": "^0.6.5"
+  }
+>>>>>>> a3267e56f96eb716fd28c823e3b77528e0bfee46
 }
