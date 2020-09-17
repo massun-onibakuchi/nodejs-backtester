@@ -1,11 +1,31 @@
 'use strict'
 const nodeplotlib = require('nodeplotlib');
 
-function genBackTest(ohlcv, parentClass, balance, commsion, pyramiding, from) {
+/**
+ * 
+ * @param {Number[][]} data APIでうけったcandleデータ[[timstamp,open,high,low,close]]
+ * @param {Strategy} parentClass Strategyクラスを継承したエントリーロジックを組み込んだクラス
+ * @param {number} balance initial balance
+ * @param {number} commsion 手数料パーセント
+ * @param {number} pyramiding ピラミッディング数量
+ * @param {number} from テストするdataの開始位置を指定
+ */
+function genBackTest(data, parentClass, balance, commsion, pyramiding, from) {
+    /** 
+     * @property {Number[][]} data [[open],[high],,,]  初期化時fromの分だけが取り除かれた引数のdataの逆順 run()ごとに最後の要素が取り除かれる new->old
+     * @property {Number[][]} ohlcv [[open],[high],,,] run()ごとにdataの要素が先頭に追加される old->new
+     */
     return new class BackTester extends parentClass {
+        /**
+         * @constructor 
+         * @param {Number[][]} data APIでうけったcandleデータ[[timstamp,open,high,low,close]]
+         * @param {number} balance initial balance
+         * @param {number} commsion 手数料パーセント
+         * @param {number} pyramiding ピラミッディング数量
+         * @param {number} from テストするdataの開始位置を指定
+         */
         constructor(data, balance, commsion, pyramiding, from) {
             super(balance, commsion, pyramiding, from);
-            // this.ohlcv = [];
             this.from;
             this.timestamp = [] //new->old
             this.open = []
@@ -13,7 +33,18 @@ function genBackTest(ohlcv, parentClass, balance, commsion, pyramiding, from) {
             this.low = []
             this.close = []
             this.volume = []
-            super.init(data, from) //インジ初期化
+            this.data; //new->old
+            this.ohlcv; //old->new
+            super.initIndi(data, from) //インジ初期化
+            this.initOhlcv(data) //インジ長さとohlcvの長さを揃える
+            console.log('this.ttmHistory :>> ', this.ttmHistory.length);
+            console.log('this.data.length :>> ', this.data.length);
+        }
+        /** インジ長さとohlcvの長さを揃える 
+         * initIndiで調整したthis.fromの分だけあらかじめデータをセット
+         * @param {number[][]} data  APIでうけったcandleデータ[[timstamp,open,high,low,close]]       
+         */
+        initOhlcv(data) {
             // this.data = data.slice(this.from,).reverse() //this.data new->old //data old->new
             // this.ohlcv = data.slice(0, this.from).reverse();// new->old
             this.data = data
@@ -21,14 +52,24 @@ function genBackTest(ohlcv, parentClass, balance, commsion, pyramiding, from) {
             this.ohlcv = pre
             this.data = data.reverse() //this.data new->old //data old->new
             this.parseOhlcv()
-            console.log('this.ttmHistory :>> ', this.ttmHistory.length);
-            console.log('this.data.length :>> ', this.data.length);
         }
         run() {
-            // const length = this.data.length //  -this.ohlcv.length
-            const length = this.data.length //  -this.from 
+            const length = this.data.length 
             for (let i = 0; i < length; i++) {
-                // console.log(
+                // this.print()
+                super.next()
+                this.updateBalance()
+                this.updateDrawDown()
+                super.updateIndi()
+                this.updateOhlcv()
+            }
+            this.valuate()
+        }
+        // addOhlcv(ohlcv) {
+        //     this.ohlcv = ohlcv
+        // }
+        print() {               
+             // console.log(
                 //     'this.timestamp[0] :>> ', this.timestamp[0],
                 //     'ttm  len',this.ttm.length,
                 //     //     //     'i :>> ', i,
@@ -45,21 +86,11 @@ function genBackTest(ohlcv, parentClass, balance, commsion, pyramiding, from) {
                 //     //     //     //     'this.data[最後の要素] :>> ', this.data[this.data.length - 1],
                 //     // 'this.open[0] :>> ', this.open[0],
                 // )
-                super.next()
-                this.updateBalance()
-                this.updateDrawDown()
-                super.updateIndi()
-                this.updateOhlcv()
             }
-            this.valuate()
-        }
-        // addOhlcv(ohlcv) {
-        //     this.ohlcv = ohlcv
-        // }
         parseOhlcv() {
             const length = this.ohlcv.length;
             for (let i = 0; i < length; i++) {
-                const el = ohlcv[i];
+                const el = this.ohlcv[i];
                 this.timestamp.push(el[0])
                 this.open.push(el[1])
                 this.high.push(el[2])
@@ -89,7 +120,7 @@ function genBackTest(ohlcv, parentClass, balance, commsion, pyramiding, from) {
             nodeplotlib.plot(data)
         }
 
-    }(ohlcv, balance, commsion, pyramiding, from)
+    }(data, balance, commsion, pyramiding, from)
 }
 
 class TradeManagement {

@@ -33,8 +33,13 @@ class Strategy extends TradeManagement {
         const next = this.ttmHistory.pop()
         this.ttm.unshift(next)
     }
-
-    init(data, from) {
+    /**
+     * インジを初期化してfromの分だけデータをあらかじめセット
+     * this.fromにバックテストの開始位置を指定
+     * @param {number} data 
+     * @param {number} from 
+     */
+    initIndi(data, from) {
         const length = data.length;
         const [open, high, low, close] = [[], [], [], []]
         for (let i = 0; i < length; i++) {
